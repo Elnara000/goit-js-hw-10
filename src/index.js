@@ -15,28 +15,26 @@ refs.input.addEventListener('input', debounce(onInput, DEBOUNCE_DELAY));
 
 function onInput(e) {
     searchQuery = e.target.value.trim();
+    if (searchQuery === '') {
+        resetRender()
+        return
+    }
      fetchCountries(searchQuery)
-    .then((posts) => {
-        if (posts.length > 10) {
-           return Notify.info("Too many matches found. Please enter a more specific name.", {timeout: 1500})
-        } else if (posts.length === 1 && refs.infoCard.innerHTML === '') {
-            renderCard(posts)
-            refs.list.innerHTML = '';
-           return          
-        } else if (posts.length > 2 && posts.length <= 10) {            
+    .then((posts) => {        
+        if (posts.length === 1) {
+            renderCard(posts)         
+        } else if (posts.length >= 2 && posts.length <= 10) {            
             renderPosts(posts)
-            refs.infoCard.innerHTML = '';
+        } else {
+            resetRender()
+            Notify.info("Too many matches found. Please enter a more specific name.", {timeout: 1500})
         }
     })
-    .catch((error) => Notify.failure("Oops, there is no country with that name", {timeout: 1500}));
-
-    if (!searchQuery) {
-        refs.list.innerHTML = '';
-        refs.infoCard.innerHTML = '';
-    }
+    .catch(() => {resetRender(); Notify.failure("Oops, there is no country with that name", {timeout: 1500})})    
 }
 
 function renderPosts(posts) {
+    resetRender()
     const markupList = posts.map(({name: {official}, flags: {svg}}) => 
     `<li class="list-item"><img src="${svg}" alt="${official}" width="50px"/>
     <p class="list-descr">${official}</p></li>`)
@@ -45,6 +43,7 @@ function renderPosts(posts) {
 }
 
 function renderCard(posts) {
+    resetRender()
     const markupCard = posts.map(({name: {official},capital,population,flags: {svg}, languages}) => {
     const langArray = Object.values(languages).join(', ');
     return `<img src="${svg}" alt="official country name" width="100px" />
@@ -59,6 +58,8 @@ function renderCard(posts) {
     refs.infoCard.insertAdjacentHTML('beforeend', markupCard);
 }
 
-
-
+function resetRender() {
+    refs.list.innerHTML = '';
+    refs.infoCard.innerHTML = '';
+}
 
